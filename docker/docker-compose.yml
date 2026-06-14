@@ -1,0 +1,38 @@
+# docker/docker-compose.yml
+# 基於微服務架構的輿情預警與互動式看板平台部署腳本
+
+version: '3.8'
+
+services:
+  # Web 伺服器：負責運行前端看板(組員A)、爬蟲(組員B)與NLP分析(組員C)
+  web:
+    image: php:8.2-apache
+    container_name: marine_web_container
+    ports:
+      - "8080:80"
+    volumes:
+      # 將 src 資料夾掛載進 Apache 容器，實現動態網頁渲染
+      - ../src:/var/www/html
+    networks:
+      - marine_network
+    restart: always
+
+  # 資料庫伺服器：負責架構預留，儲存使用者查詢過的關鍵字與多維度情緒分析結果摘要
+  db:
+    image: mysql:8.0
+    container_name: marine_db_container
+    environment:
+      MYSQL_ROOT_PASSWORD: marine_secret_pass
+      MYSQL_DATABASE: marine_sentiment_db
+    ports:
+      - "3306:3306"
+    volumes:
+      # 自動在容器啟動時初始化資料表綱要
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - marine_network
+    restart: always
+
+networks:
+  marine_network:
+    driver: bridge
